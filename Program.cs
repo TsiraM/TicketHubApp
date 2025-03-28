@@ -21,8 +21,6 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket Hub API v1"));
     app.UseDeveloperExceptionPage();
 }
 else
@@ -31,12 +29,17 @@ else
     app.UseHsts();
 }
 
+// Enable Swagger in all environments
+app.UseSwagger();
+app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Ticket Hub API v1"));
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAuthorization();
+
+// Add a redirect from root to Swagger
+app.MapGet("/", () => Results.Redirect("/swagger"));
 
 app.MapControllerRoute(
     name: "default",
