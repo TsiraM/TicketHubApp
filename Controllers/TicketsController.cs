@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using Swashbuckle.AspNetCore.Annotations;
 using TicketHubApp.Models;
 using TicketHubApp.Services;
 
@@ -7,44 +7,34 @@ namespace TicketHubApp.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerTag("Operations for purchasing concert tickets")]
     public class TicketsController : ControllerBase
     {
         private readonly QueueService _queueService;
-        private readonly ILogger<TicketsController> _logger;
 
-        public TicketsController(QueueService queueService, ILogger<TicketsController> logger)
+        public TicketsController(QueueService queueService)
         {
             _queueService = queueService;
-            _logger = logger;
         }
 
         [HttpPost("purchase")]
-        public async Task<IActionResult> PurchaseTicket([FromBody] TicketPurchase ticket)
+        [SwaggerOperation(
+            Summary = "Purchase tickets for a concert",
+            Description = "Submits a ticket purchase request and adds it to the processing queue",
+            OperationId = "PurchaseTickets"
+        )]
+        [SwaggerResponse(StatusCodes.Status202Accepted, "Purchase request accepted and queued for processing")]
+        [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid purchase request")]
+        public async Task<IActionResult> PurchaseTickets([FromBody] TicketPurchase purchase)
         {
-            // Validate model state
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            // Additional validation
-            if (ticket.ConcertId <= 0)
-            {
-                return BadRequest("Concert ID must be greater than 0");
-            }
+            await _queueService.AddMessageAsync(purchase);
 
-            try
-            {
-                // Use the queue service to send the message
-                await _queueService.SendMessageAsync(ticket);
-                _logger.LogInformation($"Ticket purchase for concert {ticket.ConcertId} by {ticket.Name} added to queue");
-                return Ok(new { message = "Ticket purchase request queued successfully." });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing ticket purchase");
-                return StatusCode(500, $"An error occurred while processing your request: {ex.Message}");
-            }
+            return Accepted();
         }
     }
 }
