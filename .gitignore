@@ -363,4 +363,5 @@ MigrationBackup/
 FodyWeavers.xsd
 
 # Sensitive configuration
+appsettings.json
 appsettings.Development.json
