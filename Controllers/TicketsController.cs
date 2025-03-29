@@ -11,10 +11,12 @@ namespace TicketHubApp.Controllers
     public class TicketsController : ControllerBase
     {
         private readonly QueueService _queueService;
+        private readonly ILogger<TicketsController> _logger;
 
-        public TicketsController(QueueService queueService)
+        public TicketsController(QueueService queueService, ILogger<TicketsController> logger)
         {
             _queueService = queueService;
+            _logger = logger;
         }
 
         [HttpPost("purchase")]
@@ -25,16 +27,26 @@ namespace TicketHubApp.Controllers
         )]
         [SwaggerResponse(StatusCodes.Status202Accepted, "Purchase request accepted and queued for processing")]
         [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid purchase request")]
+        [SwaggerResponse(StatusCodes.Status500InternalServerError, "An error occurred while processing the request")]
         public async Task<IActionResult> PurchaseTickets([FromBody] TicketPurchase purchase)
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogWarning("Invalid ticket purchase request received");
                 return BadRequest(ModelState);
             }
 
-            await _queueService.AddMessageAsync(purchase);
-
-            return Accepted();
+            try
+            {
+                await _queueService.AddMessageAsync(purchase);
+                _logger.LogInformation($"Ticket purchase for {purchase.Name} accepted for concert {purchase.ConcertId}");
+                return Accepted();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error processing ticket purchase: {ex.Message}");
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
         }
     }
 }

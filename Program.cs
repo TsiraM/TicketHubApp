@@ -8,6 +8,7 @@ builder.Services.AddControllersWithViews();
 
 // Register QueueService
 builder.Services.AddSingleton<QueueService>();
+builder.Services.AddLogging();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
