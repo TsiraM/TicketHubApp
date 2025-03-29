@@ -1,5 +1,6 @@
 using Microsoft.OpenApi.Models;
 using TicketHubApp.Services;
+using TicketHubApp.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,15 +9,14 @@ builder.Services.AddControllersWithViews();
 
 // Register QueueService
 builder.Services.AddSingleton<QueueService>();
-builder.Services.AddLogging();
 
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Ticket Hub API", Version = "v1" });
-    c.EnableAnnotations(); 
-
+    c.EnableAnnotations();
+    c.SchemaFilter<TicketPurchaseExampleFilter>();
 });
 
 var app = builder.Build();
